@@ -65,7 +65,7 @@ class sheetListDialog(QDialog):
         self.sheetList = uic.loadUi(sheetListDialog_ui, self)
 
         self.sheetList.sheetListWidget.itemClicked.connect(self.selectedItem)
-        self.sheetList.show()
+        
 
     def displaySheet(self, dataKeys):
         """
