@@ -39,15 +39,48 @@ class mainWindows(QMainWindow, form_class):
         try:
             data = read_data.dataTreatment(loadFileNames).dataRead()
             dataKey = list(data.keys())
-            print(data[dataKey[0]].head())
-            global analysisData
-            analysisData = data[dataKey[0]]
-            itemLists = list(analysisData)
-            itemListDialog().displayItem(itemLists)
+            sheetListDialog().displaySheet(dataKey)
+            selectDataKey = sheetListDialog().selectedItem()
+            print(selectDataKey)
+            # print(data[selectDataKey].head())
+            # global analysisData
+            # analysisData = data[selectDataKey]
+            # itemLists = list(analysisData)
+            # itemListDialog().displayItem(itemLists)
 
         except NameError:
             QMessageBox.warning(self,'Error', 'You sholud load files to analysis', QMessageBox.Ok)
             
+
+class sheetListDialog(QDialog):
+    """
+    Dictionary형태로 저장된 Data의 Key 값을 Display & Select하는 기능
+    """
+    def __init__(self, parent=None):
+        """
+        sheetListDialog의 생성자
+        """
+        super(sheetListDialog, self).__init__(parent)
+        sheetListDialog_ui = './ui/sheetList.ui'
+        self.sheetList = uic.loadUi(sheetListDialog_ui, self)
+
+        self.sheetList.sheetListWidget.itemClicked.connect(self.selectedItem)
+        self.sheetList.show()
+
+    def displaySheet(self, dataKeys):
+        """
+        Dictionary의 Key값을 Display
+        """
+        for key in dataKeys:
+            self.sheetList.sheetListWidget.addItem(key)
+        
+        
+    def selectedItem(self):
+        """
+        Sheet Name QlistWidget에서 Sheet Name Selected
+        """
+        return self.sheetList.sheetListWidget.currentItem().text()
+
 
 class itemListDialog(QDialog):
     """
