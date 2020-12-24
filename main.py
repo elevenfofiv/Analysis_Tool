@@ -23,8 +23,10 @@ class communication(QObject):
     def runFileName(self):
         self.filename.emit(self.fileName)
 
-    def getSheetname(self):
-        self.sheetName = sheetListDialog.sheetList.sheetListWidget.currentItem().text()
+    def getSheetname(self,data):
+        sheetList = sheetListDialog(data)
+        self.sheetName = sheetList.selectedItem()
+        print(self.sheetName)
 
 
 
@@ -54,7 +56,7 @@ class mainWindows(QMainWindow, form_class):
         try:
             data = read_data.dataTreatment(loadFileNames).dataRead()
             dataKey = list(data.keys())
-            sheetListDialog(dataKey)
+            self.communicator.getSheetname(dataKey)
             # selectDataKey = sheetListDialog(dataKey)
             # print(selectDataKey)
             # print(data[selectDataKey].head())
@@ -88,12 +90,12 @@ class sheetListDialog(QDialog):
         self.sheetCommunicator = communication()
         self.sheetCommunicator.sheetname.connect(itemListDialog.displayItem)
         self.sheetList.okayPushButton.clicked.connect(self.sheetCommunicator.getSheetname)
-
+        
     def selectedItem(self):
         """
         Sheet Name QlistWidget에서 Sheet Name Selected
         """
-        selectSheetName = self.sheetList.sheetListWidget.currentItem().text()
+        selectSheetName = self.sheetList.sheetListWidget.
         return selectSheetName
 
 
