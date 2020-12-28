@@ -20,12 +20,15 @@ class communication(QObject):
     def getFilename(self):
         self.fileName = QFileDialog.getOpenFileNames(None, 'Open Files', './data/')[0]
     
-    def runFileName(self):
+    def runFilename(self):
         self.filename.emit(self.fileName)
 
     def getSheetname(self,data):
         sheetList = sheetListDialog()
         self.sheetName = sheetList.selectedItem(data)
+
+    def runSheetname(self):
+        self.sheetname.emit(self.sheetName)
         print(self.sheetName)
 
 
@@ -44,7 +47,7 @@ class mainWindows(QMainWindow, form_class):
         self.communicator = communication()
         self.actionLoad.triggered.connect(self.communicator.getFilename)
         self.communicator.filename.connect(self.linearAnalysis)
-        self.actionLinear_Analysis.triggered.connect(self.communicator.runFileName)
+        self.actionLinear_Analysis.triggered.connect(self.communicator.runFilename)
 
 
     def linearAnalysis(self,loadFileNames):
@@ -71,12 +74,12 @@ class sheetListDialog(QDialog):
     """
     Dictionary형태로 저장된 Data의 Key 값을 Display & Select하는 기능
     """
-    # def __init__(self, dataKeys, parent=None):
-    def __init__(self):
+    def __init__(self, parent=None):
+    # def __init__(self):
         """
         sheetListDialog의 생성자
         """
-        super().__init__()
+        super(sheetListDialog, self).__init__(parent)
         # super().__init__(parent)
 
         sheetListDialog_ui = './ui/sheetList.ui'
@@ -85,19 +88,27 @@ class sheetListDialog(QDialog):
 
         self.sheetCommunicator = communication()
         self.sheetCommunicator.sheetname.connect(itemListDialog.displayItem)
-        self.sheetList.okayPushButton.clicked.connect(self.sheetCommunicator.getSheetname)
+        self.handleEvent()
         
-    def selectedItem(self,dataKeys):
+    def handleEvent(self):
+        """
+        sheetListDialog 내 이벤트 처리
+        """
+        self.sheetList.sheetListWidget.currentItemChanged.connect(self.sheetList.sheetListWidget.currentItem)
+        self.sheetList.okayPushButton.clicked.connect(self.sheetCommunicator.runSheetname)
+    
+
+    def listedItem(self,dataKeys):
         """
         Sheet Name QlistWidget에서 Sheet Name Selected
         """
         for key in dataKeys:
             self.sheetList.sheetListWidget.addItem(key)
-
         self.sheetList.show()
-        self.sheetList.sheetListWidget.setSelectedMode()
-        selectedItem = self.sheetListWidget.currentItem().text()
-        return selectedItem
+        
+    def selectedItem(self, dataKeys):
+        
+        self.listedItem(dataKeys)
 
 
 class itemListDialog(QDialog):
@@ -112,6 +123,7 @@ class itemListDialog(QDialog):
 
         itemListDialog_ui = './ui/itemList.ui'
         self.itemList = uic.loadUi(itemListDialog_ui, self)
+        self.handleEvent()
         
     def displayItem(self, itemLists):
         """
