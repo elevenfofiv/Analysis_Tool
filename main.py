@@ -1,6 +1,7 @@
+from fileinput import filename
 import sys
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
@@ -9,28 +10,27 @@ import read_data
 
 form_class = uic.loadUiType('./ui/MainWindows.ui')[0]
 
-class communication(QObject):
-            
-    """
-    Slot 함수 내 반환값 활용을 위한 Pyqtsignal 활용
-    """
-    filename = pyqtSignal(list)
-    sheetname = pyqtSignal(str)
+# class communication(QObject):
+#     """
+#     Slot 함수 내 반환값 활용을 위한 Pyqtsignal 활용
+#     """
+#     filename = pyqtSignal(list)
+#     sheetname = pyqtSignal(str)
 
-    def getFilename(self):
-        self.fileName = QFileDialog.getOpenFileNames(None, 'Open Files', './data/')[0]
+#     def getFilename(self):
+#         self.fileName = QFileDialog.getOpenFileNames(None, 'Open Files', './data/')[0]
     
-    def runFilename(self):
-        self.filename.emit(self.fileName)
+#     def runFilename(self):
+#         self.filename.emit(self.fileName)
 
-    def getSheetname(self,data):
-        sheetList = sheetListDialog()
-        self.sheetName = sheetList.selectedItem(data)
+#     def getSheetname(self,data):
+#         self.method = sheetListDialog(data)
+        
 
-    def runSheetname(self):
-        self.sheetname.emit(self.sheetName)
-        print(self.sheetName)
-
+#     def runSheetname(self):
+#         print(self.sheetName)
+#         self.sheetname.emit(self.sheetName)
+        
 
 
 class mainWindows(QMainWindow, form_class):
@@ -44,71 +44,60 @@ class mainWindows(QMainWindow, form_class):
         super().__init__()
         self.setupUi(self)
 
-        self.communicator = communication()
-        self.actionLoad.triggered.connect(self.communicator.getFilename)
-        self.communicator.filename.connect(self.linearAnalysis)
-        self.actionLinear_Analysis.triggered.connect(self.communicator.runFilename)
+        # self.communicator = communication()
+        # self.communicator.filename.connect(self.linearAnalysis)
 
+        self.actionLoad.triggered.connect(self.getFilename)
+        self.actionLinear_Analysis.triggered.connect(self.linearAnalysis)
 
-    def linearAnalysis(self,loadFileNames):
+    def getFilename(self):
+        global filename
+        filename = QFileDialog.getOpenFileNames(None, 'Open Files', './data/')[0]
+
+    def linearAnalysis(self):
         """
         linear Analysis를 진행하기 위한 Data read 및 전처리
         """
         try:
-            data = read_data.dataTreatment(loadFileNames).dataRead()
+            data = read_data.dataTreatment(filename).dataRead()
             dataKey = list(data.keys())
-            self.communicator.getSheetname(dataKey)
-            # selectDataKey = sheetListDialog(dataKey)
-            # print(selectDataKey)
-            # print(data[selectDataKey].head())
-            # global analysisData
-            # analysisData = data[selectDataKey]
-            # itemLists = list(analysisData)
-            # itemListDialog().displayItem(itemLists)
-
+            sheetlist = sheetListDialog(dataKey)
+            global sheetname
+            sheetname = sheetlist.selectedItem()
+            print(sheetname)
         except NameError:
             QMessageBox.warning(self,'Error', 'You sholud load files to analysis', QMessageBox.Ok)
-            
+
+        
+        
+        
 
 class sheetListDialog(QDialog):
     """
     Dictionary형태로 저장된 Data의 Key 값을 Display & Select하는 기능
     """
-    def __init__(self, parent=None):
-    # def __init__(self):
+    def __init__(self, dataKeys, parent=None):
         """
         sheetListDialog의 생성자
         """
         super(sheetListDialog, self).__init__(parent)
-        # super().__init__(parent)
 
         sheetListDialog_ui = './ui/sheetList.ui'
 
         self.sheetList = uic.loadUi(sheetListDialog_ui, self)
+        # self.selItem = None
+        # self.sheetCommunicator = communication()
 
-        self.sheetCommunicator = communication()
-        self.sheetCommunicator.sheetname.connect(itemListDialog.displayItem)
-        self.handleEvent()
-        
-    def handleEvent(self):
-        """
-        sheetListDialog 내 이벤트 처리
-        """
-        self.sheetList.sheetListWidget.currentItemChanged.connect(self.sheetList.sheetListWidget.currentItem)
-        self.sheetList.okayPushButton.clicked.connect(self.sheetCommunicator.runSheetname)
-    
+        self.sheetList.okayPushButton.clicked.connect(itemListDialog.displayItem)
+        self.sheetList.sheetListWidget.itemClicked.connect(self.selectedItem)
 
-    def listedItem(self,dataKeys):
-        """
-        Sheet Name QlistWidget에서 Sheet Name Selected
-        """
         for key in dataKeys:
             self.sheetList.sheetListWidget.addItem(key)
         self.sheetList.show()
-        
-    def selectedItem(self, dataKeys):
-        
-        self.listedItem(dataKeys)
+
+    def selectedItem(self):
+        selItem = self.sheetList.sheetListWidget.currentItem().text()
+        return selItem
 
 
 class itemListDialog(QDialog):
@@ -123,7 +112,6 @@ class itemListDialog(QDialog):
 
         itemListDialog_ui = './ui/itemList.ui'
         self.itemList = uic.loadUi(itemListDialog_ui, self)
-        self.handleEvent()
         
     def displayItem(self, itemLists):
         """
@@ -133,9 +121,6 @@ class itemListDialog(QDialog):
             self.itemList.inputItemlistWidget.addItem(item)
             self.itemList.outputItemlistWidget.addItem(item)
         self.itemList.show()
-
-
-
 
 
 if __name__ == '__main__':
